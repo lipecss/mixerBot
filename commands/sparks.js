@@ -10,7 +10,7 @@ exports.run = async (client, data, args, userId, channelId, socket, msg) => {
       return res.json()
     })
     .then((datafecth)=>{
-        console.log(datafecth)
+        //console.log(datafecth)
         socket.call('msg', [`${data.user_name}, você possui :spark ${datafecth.sparks} Sparks :spark`])
     })
 }
