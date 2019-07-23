@@ -14,7 +14,7 @@ exports.run = async (client, data, args, userId, channelId, socket, msg) => {
      }).catch((err)=>{
          console.log(err)
      })
- }else{
+  }else{
     socket.call('whisper', [data.user_name, `você nao pode apagar mensagens!`]); //Sussurro de erro
- }
+  }
 }

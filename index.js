@@ -36,7 +36,7 @@ client.request('GET', 'users/current')
     return createChatSocket(userInfo.id, userInfo.channel.id, body.endpoints, body.authkey);
 })
 .catch(error => {
-    console.error('Something went wrong.');
+    console.error('Algo de errado aconteceu');
     console.error(error);
 });
 
