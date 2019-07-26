@@ -1,3 +1,6 @@
+/** Inicia o dotenv */
+require('dotenv').config()
+
 /** Carrega os modulos uteis */
 const ws = require('ws');
 const moment = require('moment');
@@ -55,7 +58,7 @@ const ca = new Carina({
 // the required information to all of our requests after this call.
 client.use(new Mixer.OAuthProvider(client, {
     tokens: {
-        access: 'i2YdKaRpCADcOgmBJuA0sAhWfSj5cUj6IlywTlWu8txXUc0ek5ePSyIDgMa8OicF',
+        access: process.env.ACCESS_TOKEN,
         expires: Date.now() + (365 * 24 * 60 * 60 * 1000)
     },
 }));
@@ -114,9 +117,11 @@ socket.on('ChatMessage', async data => {
     try {
         //Busca o comando
         let commands = require(`./commands/${command}.js`);
+        socket.call('deleteMessage', [data.id])
         commands.run(client, data, args, userId, channelId, socket, msg);
     } catch(err){
          //Apaga a o comando que não existe
+        socket.call('deleteMessage', [data.id])
         if (err.code == "MODULE_NOT_FOUND") console.log("Esse comando não existe! Tente Novamente");
         socket.call('whisper', [data.user_name, 'desculpe mas esse comando nao existe']);
         console.log(err);
@@ -135,21 +140,22 @@ socket.on('UserJoin', async data => {
         .then((res)=>{
             return res.json();
         })
-        .then(async (datafecth)=>{
+        .then(async (datafetch)=>{
             const newuser = new User({
-                mixeruserId: datafecth.id,
-                username: datafecth.username,
-                level: datafecth.level,
-                avatarUrl: datafecth.avatarURL,
-                isverified: datafecth.verified,
+                mixeruserId: datafetch.id,
+                mixerchannelId: datafetch.channel.id,
+                username: datafetch.username,
+                level: datafetch.level,
+                avatarUrl: datafetch.avatarURL,
+                isverified: datafetch.verified,
                 isfollow: false,
-                ispartnered: datafecth.channel.partnered,
-                languageId: datafecth.channel.languageId,
+                ispartnered: datafetch.channel.partnered,
+                languageId: datafetch.channel.languageId,
                 createdTimestamp : Date.now()
             })
             // Cadatra no banco
             newuser.save().then(() =>{
-                console.log(`Usuario ${datafecth.username} cadastrado com sucesso no Banco`);
+                console.log(`Usuario ${datafetch.username} cadastrado com sucesso no Banco`);
             }).catch((err)=>{
                 console.log('Houve um erro ao cadastrar usuáriro no Bacndo de Dados: ' + err)
             })
@@ -165,9 +171,11 @@ socket.on('UserJoin', async data => {
     });
 });
 
-socket.on('skillattribution', skills => {
-    console.log('aui')
+// Evento de quando uma Poll é iniciada
+socket.on('PollEnd', poll => {
+    socket.call('msg', [`:honk Poll finalizada! :honk \nTotal de votos: ${poll.voters}\nRespotas: ${JSON.stringify(poll.responses, null, 4)}`])
 });
+
 
 // Listen for socket errors. You will need to handle these here.
 socket.on('error', error => {
@@ -186,6 +194,7 @@ ca.subscribe(`channel:${channelId}:update`, data => {
     }else{
         socket.call('msg', [` :honk O nome da Live foi alterado e agora é :honk \n\n ${data.name}`]);
     }
+    console.log(data)
 });
 
 // Quando alguem segue o nosso canal

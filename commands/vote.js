@@ -6,10 +6,15 @@ exports.run = async (client, data, args, userId, channelId, socket, msg) => {
         'Mod'
     ];
                    
-    let pergunta = args.slice(0, args.lastIndexOf('?')).join(" ").replace(/^[A-z!]+/, '');
+    let pergunta = args.slice(0, args.lastIndexOf('?')).join(" ")
     let opcoes = args.slice(0).join(" ").slice(args.slice(0).join(" ").indexOf("?") + 1).split(',');
     const optionsArray = opcoes.toString().replace(/ ?, ?/g, ',').replace(/(^ | $)/g, '').split(',');
     const result = optionsArray;
+
+    console.log("pergunta: " + pergunta)
+    console.log("opcoes: " + opcoes)
+    console.log("optionsArray: " + optionsArray)
+    console.log("result: " + result)
 
     if(roles.some(r => data.user_roles.includes(r))){
          if(!pergunta) return socket.call('whisper', [data.user_name, `informe uma pergunta para a votação!`]);

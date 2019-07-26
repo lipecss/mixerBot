@@ -6,6 +6,9 @@ const users = new mongoose.Schema({
   mixeruserId:{
     type: Number
   },
+  mixerchannelId:{
+    type: Number
+  },
   username: {
     type: String
   },
@@ -20,7 +23,6 @@ const users = new mongoose.Schema({
   },
   isfollow:{
     type: Boolean,
-    default: false
   },
   ispartnered:{
       type: Boolean,

@@ -12,8 +12,14 @@ exports.run = async (client, data, args, userId, channelId, socket, msg) => {
 
   // Se for Dono ou Admin
   if(roles.some(r => data.user_roles.includes(r))){
-      //link base: https://mixer.com/api/v2/chats/${channelId}/users
+    const mixerFetch = await fetch(`https://mixer.com/api/v2/chats/${channelId}/users`)
+    .then((res)=>{
+      return res.json();
+    })
+    .then((datafetch)=>{
+      console.log(datafetch); 
+    })
 
-      console.log(data.message.message.filter(d => d.type === "tag")); 
+      
   }
 }

@@ -20,7 +20,7 @@ module.exports = [
     'Grande userName apareceu derrepente!',
     'userName entrou na Live. Lavou a louça antes?!!',
     'userName acabou de aparecer.',
-    'É um pássaro! É um avião! Nao] é a ilustre presença do(a) userName.',
+    'É um pássaro! É um avião! Nao é a ilustre presença do(a) userName.',
     'É o(a) userName! Louvado seja Deus! \\\\ [T] /',
     'Nunca iremos desistir de userName. Nunca deixaremos userName para baixo.',
     'Ha! userName aderiu! Seja Bem vindo!!',
