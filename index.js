@@ -10,8 +10,8 @@ const mongoose = require('mongoose');
 const fetch = require('node-fetch');
 const Mixer = require('@mixer/client-node');
 const Carina = require('carina').Carina;
+const { ShortCodeExpireError, OAuthClient } = require('@mixer/shortcode-oauth');
 Carina.WebSocket = ws;
-
 
 const client = new Mixer.Client(new Mixer.DefaultRequestRunner());
 
@@ -47,12 +47,8 @@ let userInfo; //Dados do canal
 const myiduser = 4509390; // Id do usuario do canal
 const channelId = 3553359; // Id do canal
 
-const ca = new Carina({
-    queryString: {
-        'Client-ID': 'Click here to get your Client ID!',
-    },
-    isBot: true,
-}).open();
+const ca = new Carina({ isBot: true }).open();
+
 
 // With OAuth we don't need to log in. The OAuth Provider will attach
 // the required information to all of our requests after this call.
@@ -107,6 +103,17 @@ socket.on('ChatMessage', async data => {
     // Pegando o conteudo da mensagem
     let msg = data.message.message[0].data.toLowerCase();
     
+    // Se a Mensagem conter Autocolantes(Stikers)
+    if (data.message.meta.is_skill) {
+        let stickers = data.message.meta
+        //console.log(stickers)
+        //link da imagem https://xforgeassets002.xboxlive.com/xuid-2535473787585366-public/b7a1d715-3a9e-4bdd-a030-32f9e2e0f51e/0013_lots-o-stars_256.png
+        if(stickers.skill.cost > 5000 && stickers.skill.currency == 'Sparks'){
+            socket.call('msg', [`/me Obrigado @${data.user_name} pelos ${stickers.skill.cost} Sparks :spark`])
+        }
+        console.log(JSON.stringify(data.message.meta, null, 4));
+    }
+    
     // Se a mensagem nao conter o prefixo do codigo, retorna nada
     if (data.message.message[0].data.indexOf(client.prefix) !== 0) return;
     
@@ -141,41 +148,57 @@ socket.on('UserJoin', async data => {
             return res.json();
         })
         .then(async (datafetch)=>{
-            const newuser = new User({
-                mixeruserId: datafetch.id,
-                mixerchannelId: datafetch.channel.id,
-                username: datafetch.username,
-                level: datafetch.level,
-                avatarUrl: datafetch.avatarURL,
-                isverified: datafetch.verified,
-                isfollow: false,
-                ispartnered: datafetch.channel.partnered,
-                languageId: datafetch.channel.languageId,
-                createdTimestamp : Date.now()
+            const mixerLevelProgression = await fetch(`https://mixer.com/api/v1/ascension/channels/${channelId}/users/${datafetch.id}`)
+            .then((res)=>{
+                return res.json();
             })
-            // Cadatra no banco
-            newuser.save().then(() =>{
-                console.log(`Usuario ${datafetch.username} cadastrado com sucesso no Banco`);
-            }).catch((err)=>{
-                console.log('Houve um erro ao cadastrar usuáriro no Bacndo de Dados: ' + err)
+            .then(async (datafetchLevel)=>{
+                console.log(datafetchLevel)
+                const newuser = new User({
+                    mixeruserId: datafetch.id,
+                    mixerchannelId: datafetch.channel.id,
+                    username: datafetch.username,
+                    level: datafetch.level,
+                    levelProgression: datafetchLevel.level.level,
+                    avatarUrl: datafetch.avatarUrl,
+                    assetsUrl: datafetchLevel.level.assetsUrl,
+                    isverified: datafetch.verified,
+                    isfollow: false,
+                    ispartnered: datafetch.channel.partnered,
+                    languageId: datafetch.channel.languageId,
+                    createdTimestamp : Date.now()
+                })
+                // Cadatra no banco
+                newuser.save().then(() =>{
+                    console.log(`Usuario ${datafetch.username} cadastrado com sucesso no Banco`);
+                }).catch((err)=>{
+                    console.log('Houve um erro ao cadastrar usuáriro no Bacndo de Dados: ' + err)
+                })
+                // Randomiza as mensagens do array
+                let randomItem = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
+                // Troca o valor userName para o nome do usuario
+                let resultadoMessage = randomItem.replace('userName', `@${data.username}`);
+                socket.call('msg', [resultadoMessage]);
             })
-            // Randomiza as mensagens do array
-            let randomItem = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
-            // Troca o valor userName para o nome do usuario
-            let resultadoMessage = randomItem.replace('userName', `@${data.username}`);
-            socket.call('msg', [resultadoMessage]);
-        })
+         });
         }else{
             //console.log('Já está Cadastrado')
         }
     });
 });
 
+socket.on('UserUpdate', user => {
+    console.log(user);
+});
+
+socket.on('SkillAttribution', data =>{
+    console.log('data')
+})
+
 // Evento de quando uma Poll é iniciada
 socket.on('PollEnd', poll => {
     socket.call('msg', [`:honk Poll finalizada! :honk \nTotal de votos: ${poll.voters}\nRespotas: ${JSON.stringify(poll.responses, null, 4)}`])
 });
-
 
 // Listen for socket errors. You will need to handle these here.
 socket.on('error', error => {
@@ -184,22 +207,23 @@ socket.on('error', error => {
 });
 
 
-
                                     /*Eventos Carina (Tempo Real)*/
 
 // Quando ocorre atualização do meu canal
 ca.subscribe(`channel:${channelId}:update`, data => {
-    if(!data.name){
-
-    }else{
-        socket.call('msg', [` :honk O nome da Live foi alterado e agora é :honk \n\n ${data.name}`]);
-    }
     console.log(data)
+    if(data.name){
+         socket.call('msg', [`:honk O nome da Live foi alterado e agora é ${data.name} :honk`]);
+     }else if (data.type.name){
+        socket.call('msg', [`:XboxElite O Jogo da Live foi alterado e agora é ${data.type.name} :XboxElite `]);
+     }
+   
 });
+
 
 // Quando alguem segue o nosso canal
 ca.subscribe(`channel:${channelId}:followed`, data =>{
-    console.log("data: " + data.user.id + " - " + data.following)
+    console.log("Usuário: " + data.user.id + " - " + "Status: " + data.following)
     User.findOne({mixeruserId: data.user.id}).then(async (user) =>{
         if(user && data.following == false){
             user.isfollow = false;
@@ -217,5 +241,28 @@ ca.subscribe(`channel:${channelId}:followed`, data =>{
             })
         }
     })
+})
+
+// Evento de quando alguem upa na progressão do canal
+ca.subscribe(`progression:${channelId}:levelup`, levelProgression =>{
+    User.findOne({mixeruserId: levelProgression.userId}).then(async (user) =>{
+        if(user){
+            user.levelProgression = levelProgression.level.level
+            user.assetsUrl = levelProgression.level.assetsUrl
+            user.save().then(() =>{
+                //https://mixer.com/api/v1/ascension/channels/3553359/users/79317924
+                //Imagem https://static.mixer.com/img/design/ui/fan-progression/v1_badges/teal/large.gif
+                console.log(`Nível do ${user.username} atualizado com sucesso`)
+                socket.call('whisper', [user.username,`Parabéns você upou, continue assim. Você é LVL ${levelProgression.level.level} agora!`])
+            }).catch((err) =>{
+                console.log(`Falha ao atualizar o nivel do ${user.username} no banco`)
+            }); 
+        }
+    })
+})
+
+// Evento de quando alguem Subscreve no canal
+ca.subscribe(`channel:${channelId}:skill`, skill =>{
+    console.log(skill)
 })
 }

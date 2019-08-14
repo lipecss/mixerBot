@@ -11,6 +11,6 @@ exports.run = async (client, data, args, userId, channelId, socket, msg) => {
     })
     .then((datafetch)=>{
         //console.log(datafetch)
-        socket.call('msg', [`${data.user_name}, você possui :spark ${datafetch.sparks} Sparks :spark`]);
+        socket.call('msg', [`/me ${data.user_name}, você possui :spark ${datafetch.sparks} Sparks :spark`]);
     })
 }

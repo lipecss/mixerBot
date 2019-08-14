@@ -15,7 +15,13 @@ const users = new mongoose.Schema({
   level:{
     type: Number
   },
+  levelProgression:{
+    type: Number
+  },
   avatarUrl: {
+    type: String
+  },
+  assetsUrl: {
     type: String
   },
   isverified: {
