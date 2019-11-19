@@ -7,6 +7,7 @@ const moment = require('moment');
 const fs = require('fs');
 const { readFileSync } = require('fs');
 const mongoose = require('mongoose');
+const cron = require("node-cron");
 const fetch = require('node-fetch');
 const Mixer = require('@mixer/client-node');
 const Carina = require('carina').Carina;
@@ -20,11 +21,12 @@ client.prefix = process.env.PREFIX;
 
 // Localização do Moment
 moment.locale('pt-BR');
-
 /**
  * Importando Models
  */
 const User = require('./models/User.js')
+const Money = require('./models/Coin.js')
+const Log = require('./models/Log.js')
 
 /** Instancia os ARQUIVOS. */
 const welcomeMessages = require('./welcomeMessages.js')
@@ -36,7 +38,10 @@ const welcomeMessages = require('./welcomeMessages.js')
 const db = 'mongodb://localhost:27017/mixer';
 
 // Connect to Database
-mongoose.connect(db, { useNewUrlParser: true }).then(()=>{
+mongoose.connect(db, { 
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+}).then(()=>{
     console.log('Conectado com sucesso ao banco!')
 }).catch((err)=>{
     console.log('Erro ao tentar se conectar ao Mongodb ' + err);
@@ -46,6 +51,8 @@ mongoose.connect(db, { useNewUrlParser: true }).then(()=>{
 let userInfo; //Dados do canal
 const myiduser = 4509390; // Id do usuario do canal
 const channelId = 3553359; // Id do canal
+let isOnline = false;
+let roundSkillAndEventsCoins = 200 // Valor que os sparks serão validados e divididos
 
 const ca = new Carina({ isBot: true }).open();
 
@@ -55,7 +62,7 @@ const ca = new Carina({ isBot: true }).open();
 client.use(new Mixer.OAuthProvider(client, {
     tokens: {
         access: process.env.ACCESS_TOKEN,
-        expires: Date.now() + (365 * 24 * 60 * 60 * 1000)
+        expires: new Date(Number(new Date()) + 315360000000)
     },
 }));
 
@@ -97,49 +104,128 @@ function createChatSocket (userId, channelId, endpoints, authkey) {
         console.error(error);
     });
 
+socket.on('UserUpdate', data =>{
+    console.log(data)
+})
+
 // Evento de escutar as mensagens recebidas no chat
 socket.on('ChatMessage', async data => {
     //console.log(data.message)
     // Pegando o conteudo da mensagem
-    let msg = data.message.message[0].data.toLowerCase();
+        // Se a Mensagem conter Autocolantes(Stikers)
+        if (data.message.meta.is_skill) {
+            let stickers = data.message.meta
+            //console.log(stickers)
+            //link da imagem https://xforgeassets002.xboxlive.com/xuid-2535473787585366-public/b7a1d715-3a9e-4bdd-a030-32f9e2e0f51e/0013_lots-o-stars_256.png
+            if(stickers.skill.cost > 200 && stickers.skill.currency == 'Sparks'){
+                socket.call('msg', [`/me Obrigado @${data.user_name} pelos ${stickers.skill.cost} Sparks :spark`])
+            }
     
-    // Se a Mensagem conter Autocolantes(Stikers)
-    if (data.message.meta.is_skill) {
-        let stickers = data.message.meta
-        //console.log(stickers)
-        //link da imagem https://xforgeassets002.xboxlive.com/xuid-2535473787585366-public/b7a1d715-3a9e-4bdd-a030-32f9e2e0f51e/0013_lots-o-stars_256.png
-        if(stickers.skill.cost > 5000 && stickers.skill.currency == 'Sparks'){
-            socket.call('msg', [`/me Obrigado @${data.user_name} pelos ${stickers.skill.cost} Sparks :spark`])
+            if(stickers.skill.cost >= roundSkillAndEventsCoins && stickers.skill.currency == 'Sparks'){
+                let coinsToAdd = Math.round((stickers.skill.cost/roundSkillAndEventsCoins))*5;
+                console.log('calculo: ', coinsToAdd)
+                Money.findOne({mixeruserId: data.user_id}, (err, coin) =>{
+                    if(err) console.log(err);
+                    if(!coin){
+                        const newCoin = new Money({
+                            mixeruserId: data.user_id,
+                            username: data.user_name,
+                            coin: coinsToAdd
+                        })
+                        newCoin.save().catch(err => console.log(err))
+                    }else{
+                        const newLog = new Log({
+                            mixeruserId: coin.mixeruserId,
+                            username: coin.username,
+                            action: 'Uso de Skill Premiada',
+                            category: 'Skill',
+                            message: `Recebeu +${coinsToAdd} moedas ao enviar a Skill ${stickers.skill.skill_name} de ${stickers.skill.cost} Sparks em ${moment().format('LLL')}`
+                        })
+                        coin.coin = coin.coin + coinsToAdd
+                        coin.save().catch(err => console.log(err))
+                        newLog.save().then(()=>{
+                            console.log('Log de Skill criado com sucesso')
+                        }).catch(err => console.log(err))
+                    }
+                })
+                socket.call('whisper', [data.user_name, `Voce recebeu +${coinsToAdd} moedas pelos mais de ${roundSkillAndEventsCoins} Sparks doados!`])
+            }
+            console.log(JSON.stringify(data.message.meta, null, 4));
         }
-        console.log(JSON.stringify(data.message.meta, null, 4));
-    }
-    
-    // Se a mensagem nao conter o prefixo do codigo, retorna nada
-    if (data.message.message[0].data.indexOf(client.prefix) !== 0) return;
-    
-    const args = data.message.message[0].data.slice(client.prefix.length).trim().split(/ +/g);
-    console.log(args)
-    const command = args.shift().toLowerCase();
-      
-    try {
-        //Busca o comando
-        let commands = require(`./commands/${command}.js`);
-        socket.call('deleteMessage', [data.id])
-        commands.run(client, data, args, userId, channelId, socket, msg);
-    } catch(err){
-         //Apaga a o comando que não existe
-        socket.call('deleteMessage', [data.id])
-        if (err.code == "MODULE_NOT_FOUND") console.log("Esse comando não existe! Tente Novamente");
-        socket.call('whisper', [data.user_name, 'desculpe mas esse comando nao existe']);
-        console.log(err);
-    } 
-});
+    let msg = data.message.message[0].data.toLowerCase();
 
-// Quando um usuario entra na Live(chta)
+        // Se a mensagem nao conter o prefixo do codigo, retorna nada
+        if (data.message.message[0].data.indexOf(client.prefix) !== 0) return;
+    
+        const args = data.message.message[0].data.slice(client.prefix.length).trim().split(/ +/g);
+        console.log(args)
+        const command = args.shift().toLowerCase();
+          
+        try {
+            //Busca o comando
+            let commands = require(`./commands/${command}.js`);
+            // socket.call('deleteMessage', [data.id]).then(() =>{
+            //     console.log(`Mensagem do comando ${command} apagada`)
+            // }).catch(console.log)
+            commands.run(client, data, args, userId, channelId, socket, msg);
+            //console.log(data)
+            // let coinsToAdd = Math.ceil(Math.random() * 50)
+            // console.log(coinsToAdd + " coins")
+            // Money.findOne({mixeruserId: data.user_id}, (err, coin) =>{
+            //     if(err) console.log(err);
+            //     if(!coin){
+            //         const newCoin = new Money({
+            //             mixeruserId: data.user_id,
+            //             username: data.user_name,
+            //             coin: coinsToAdd
+            //         })
+    
+            //         newCoin.save().catch(err => console.log(err))
+            //     }else{
+            //         coin.coin = coin.coin + coinsToAdd
+            //         coin.save().catch(err => console.log(err))
+            //     }
+            // })
+        } catch(err){
+             //Apaga a o comando que não existe
+             socket.call('deleteMessage', [data.id]).then(() =>{
+                console.log('mensagem apagada')
+            }).catch(console.log)
+            if (err.code == "MODULE_NOT_FOUND") console.log("Esse comando não existe! Tente Novamente");
+            socket.call('whisper', [data.user_name, 'desculpe mas esse comando nao existe']);
+            console.log(err);
+        } 
+});
+let users = []
+
+// Quando um usuario entra na Live(chat)
 socket.on('UserJoin', async data => {
+    data.hour_of_entry = moment().format()
+    users.push(data)
+    console.log(data)
+    Money.findOne({mixeruserId: data.id}, async (err, coin) =>{
+        if(err) console.log(err);
+        if(!coin){
+            console.log(`Nao tem: ${data.username}`)
+            const newCoin = new Money({
+                mixeruserId: data.id,
+                username: data.username,
+                coin: 0
+            })
+            console.log(`Usuario: ${data.username} foi adicionado ao banco de Money`)
+            newCoin.save().catch(err => console.log(err))
+        }
+    })
+
+     console.log('------------Array----------------')
+     for(var i = users.length - 1; i >= 0; i--) {
+         //console.log(users[i].username)
+         console.log(users[i])
+     }
+    
     User.findOne({mixeruserId: data.id}).then(async (user) =>{
         if(user && user.isUnfollowed){
-        console.log(`${data.username} retornou ao servidor e já tinha saido antes`)
+            console.log(`${data.username} retornou a Live e deixou de nos seguir antes`)
         }
         if(!user){
             // Pega os dados do novo usuario
@@ -172,7 +258,7 @@ socket.on('UserJoin', async data => {
                 newuser.save().then(() =>{
                     console.log(`Usuario ${datafetch.username} cadastrado com sucesso no Banco`);
                 }).catch((err)=>{
-                    console.log('Houve um erro ao cadastrar usuáriro no Bacndo de Dados: ' + err)
+                    console.log('Houve um erro ao cadastrar usuáriro no Banco de Dados: ' + err)
                 })
                 // Randomiza as mensagens do array
                 let randomItem = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
@@ -182,23 +268,60 @@ socket.on('UserJoin', async data => {
             })
          });
         }else{
-            //console.log('Já está Cadastrado')
+            User.findOne({mixeruserId: data.id}).then(async (user) =>{
+                const mixerFetch = await fetch(`https://mixer.com/api/v1/users/${user.mixeruserId}`)
+                .then((res)=>{
+                  return res.json();
+                })
+                .then((datafetch)=>{
+                    // Se o usuário upar de nivel, atualiza no banco
+                    if(datafetch.level != user.level){
+                        user.level = datafetch.level;
+                        user.save().then(() =>{
+                            console.log(`Nivel de usuario atualizado, agora seu Nivel é: ${user.level}`);
+                        }).catch((err)=>{
+                            console.log(`Houve um erro ao atualizar o nível de usuario do ${user.username} no Banco de Dados:\n\n ${err}`)
+                        })
+                    // Se o suaurio alterou sua imagem de perfil
+                    }else if(datafetch.avatarUrl != user.avatarUrl){
+                        user.avatarUrl = datafetch.avatarUrl;
+                        user.save().then(() =>{
+                            console.log(`Imagem de usuario atualizado, agora é: ${user.avatarUrl}`);
+                        }).catch((err)=>{
+                            console.log(`Houve um erro ao atualizar a imagem de usuario do ${user.username} no Banco de Dados:\n\n ${err}`)
+                        })
+                    }else if(datafetch.username != user.username){
+                        user.username = datafetch.username;
+                        user.save().then(() =>{
+                            console.log(`Isername de usuario atualizado, agora é: ${user.username}`);
+                        }).catch((err)=>{
+                            console.log(`Houve um erro ao atualizar o Username do ${user.username} no Banco de Dados:\n\n ${err}`)
+                        })
+                    }
+                })
+            }).catch((erro)=>{
+                console.log('Erro no banco: ' + erro)
+            })
         }
     });
 });
 
-socket.on('UserUpdate', user => {
-    console.log(user);
+// // Tarefa que adiciona X coins aos usuarios logados
+
+
+// Quando um usuario sai da Live(chat)
+socket.on('UserLeave', async data => {
+    for(var i = users.length - 1; i >= 0; i--) {
+        if(users[i].id === data.id) {
+            users.splice(i);
+            break;
+         }
+    }
+    console.log(`${data.username} saiu`)
+    await console.log(users.length)
+  
 });
 
-socket.on('SkillAttribution', data =>{
-    console.log('data')
-})
-
-// Evento de quando uma Poll é iniciada
-socket.on('PollEnd', poll => {
-    socket.call('msg', [`:honk Poll finalizada! :honk \nTotal de votos: ${poll.voters}\nRespotas: ${JSON.stringify(poll.responses, null, 4)}`])
-});
 
 // Listen for socket errors. You will need to handle these here.
 socket.on('error', error => {
@@ -208,18 +331,6 @@ socket.on('error', error => {
 
 
                                     /*Eventos Carina (Tempo Real)*/
-
-// Quando ocorre atualização do meu canal
-ca.subscribe(`channel:${channelId}:update`, data => {
-    console.log(data)
-    if(data.name){
-         socket.call('msg', [`:honk O nome da Live foi alterado e agora é ${data.name} :honk`]);
-     }else if (data.type.name){
-        socket.call('msg', [`:XboxElite O Jogo da Live foi alterado e agora é ${data.type.name} :XboxElite `]);
-     }
-   
-});
-
 
 // Quando alguem segue o nosso canal
 ca.subscribe(`channel:${channelId}:followed`, data =>{
@@ -261,8 +372,53 @@ ca.subscribe(`progression:${channelId}:levelup`, levelProgression =>{
     })
 })
 
-// Evento de quando alguem Subscreve no canal
+// Evento de quando alguem Usa Skill no canal
 ca.subscribe(`channel:${channelId}:skill`, skill =>{
     console.log(skill)
+    let coinsToAdd = Math.round((skill.price/roundSkillAndEventsCoins))*5;
+    
+    // Se a mensagem conter Eventos(GIF, Bola de Praia....)
+    if (skill.manifest.type == 'event') {
+
+        // Busca o usuario e insere o log de envio de Eventos so Banco de Dados
+        User.findOne({mixeruserId: skill.triggeringUserId}, (err, user) =>{
+            if(err) console.log(err)
+            if(user){
+                const newLog = new Log({
+                    mixeruserId: user.mixeruserId,
+                    username: user.username,
+                    action: 'Uso de Eventos Premiados',
+                    category: 'Eventos',
+                    message: `Recebeu +${coinsToAdd} moedas ao enviar o Evento de ${skill.price} Sparks em ${moment().format('LLL')}`
+                })
+                // Salva o LOG no banco de Dados
+                newLog.save().then(()=>{
+                    console.log('Log de Eventos criado com sucesso')
+                }).catch(err => console.log(err))
+
+                socket.call('msg', [`/me Obrigado @${user.username} pelos ${skill.price} Sparks :spark`])
+                socket.call('whisper', [user.username, `Voce recebeu +${coinsToAdd} moedas pelos ${skill.price} Sparks doados! Use !coins para saber quantos voce já tem`])
+            }
+        })
+        // Insere o valor gasto do evento ao usuario no Banco
+        Money.findOne({mixeruserId: skill.triggeringUserId}, (err, coin) =>{
+            if(err) console.log(err);
+            coin.coin = coin.coin + coinsToAdd
+            coin.save().then(()=>{
+                console.log(`Receberá: ${coinsToAdd}`)
+                console.log('Moeda do evento adicionada com sucesso')
+            }).catch(err => console.log(err))
+        })
+    }
 })
+
+// Evento de quando ficamos online
+ca.subscribe(`channel:${channelId}:update`, update =>{
+    if(update.online == true){
+        isOnline = true
+    }
+    console.log(update);
+    console.log('isOnline é: ' + isOnline);
+})
+
 }

@@ -1,6 +1,6 @@
-const mongoose     = require('mongoose');
-const moment       = require('moment');
-const Schema       = mongoose.Schema
+const mongoose = require('mongoose');
+const moment = require('moment');
+const Schema = mongoose.Schema
 
 const users = new mongoose.Schema({
   mixeruserId:{
@@ -44,5 +44,4 @@ const users = new mongoose.Schema({
   }
 })
 
-
-module.exports = mongoose.model('MixerUsers', users);;
+module.exports = mongoose.model('MixerUsers', users);

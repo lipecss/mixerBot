@@ -37,5 +37,17 @@ exports.run = async (client, data, args, userId, channelId, socket, msg) => {
         });
     }else{
         socket.call('whisper', [data.user_name, `você nao pode alterar o nome da Live!`]);
+        const newLogError = new Log({
+            mixeruserId: data.user_id,
+            username: data.user_name,
+            action: 'Comando Negado',
+            category: 'Comando',
+            message: `Usuário ${data.user_name} sem permissao tentou usar o comando !title(alterar titulo da live) em ${moment().format('LLL')}`
+        })
+    
+    // Salva o LOG no banco de Dados
+        newLogError.save().then(()=>{
+            console.log('Log de Erro criado com sucesso')
+        }).catch(err => console.log(err))
     }
 }

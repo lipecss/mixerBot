@@ -39,5 +39,17 @@ exports.run = async (client, data, args, userId, channelId, socket, msg) => {
         }
     }else{
         socket.call('whisper', [data.user_name, `você nao pode alterar a audiência da Live!`]);
+        const newLogError = new Log({
+            mixeruserId: data.mixeruserId,
+            username: data.user_name,
+            action: 'Comando Negado',
+            category: 'Comando',
+            message: `Usuário ${data.user_name} sem permissao tentou usar o comando !audience(trocar o audienencia) em ${moment().format('LLL')}`
+        })
+    
+    // Salva o LOG no banco de Dados
+        newLogError.save().then(()=>{
+            console.log('Log de Erro criado com sucesso')
+        }).catch(err => console.log(err))
     }
 }
