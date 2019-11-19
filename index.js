@@ -35,7 +35,7 @@ const welcomeMessages = require('./welcomeMessages.js')
 /**
  * Database setup
  */
-const db = 'mongodb://localhost:27017/mixer';
+const db = 'mongodb://localhost:27017/mixer'|| process.env.MONGO_URL;
 
 // Connect to Database
 mongoose.connect(db, { 
@@ -117,7 +117,7 @@ socket.on('ChatMessage', async data => {
             let stickers = data.message.meta
             //console.log(stickers)
             //link da imagem https://xforgeassets002.xboxlive.com/xuid-2535473787585366-public/b7a1d715-3a9e-4bdd-a030-32f9e2e0f51e/0013_lots-o-stars_256.png
-            if(stickers.skill.cost > 200 && stickers.skill.currency == 'Sparks'){
+            if(stickers.skill.cost > 5000 && stickers.skill.currency == 'Sparks'){
                 socket.call('msg', [`/me Obrigado @${data.user_name} pelos ${stickers.skill.cost} Sparks :spark`])
             }
     
@@ -150,7 +150,7 @@ socket.on('ChatMessage', async data => {
                 })
                 socket.call('whisper', [data.user_name, `Voce recebeu +${coinsToAdd} moedas pelos mais de ${roundSkillAndEventsCoins} Sparks doados!`])
             }
-            console.log(JSON.stringify(data.message.meta, null, 4));
+            // console.log(JSON.stringify(data.message.meta, null, 4));
         }
     let msg = data.message.message[0].data.toLowerCase();
 
