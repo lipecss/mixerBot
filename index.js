@@ -164,9 +164,9 @@ socket.on('ChatMessage', async data => {
         try {
             //Busca o comando
             let commands = require(`./commands/${command}.js`);
-            // socket.call('deleteMessage', [data.id]).then(() =>{
-            //     console.log(`Mensagem do comando ${command} apagada`)
-            // }).catch(console.log)
+             socket.call('deleteMessage', [data.id]).then(() =>{
+                 console.log(`Mensagem do comando ${command} apagada`)
+             }).catch(console.log)
             commands.run(client, data, args, userId, channelId, socket, msg);
             //console.log(data)
             // let coinsToAdd = Math.ceil(Math.random() * 50)

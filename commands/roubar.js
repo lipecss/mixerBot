@@ -28,6 +28,7 @@ exports.run = async (client, data, args, userId, channelId, socket, msg) => {
 
     // Verifica se tirou ele mesmo
     if(Randomuser.username == data.user_name){
+        socket.call('msg', ['Azarado voce tirou voce mesmo!'])
         console.log('Azarado voce tirou voce mesmo!')
     }else{
         // Se for numero Par entao irá retirar
