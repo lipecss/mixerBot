@@ -35,7 +35,7 @@ const welcomeMessages = require('./welcomeMessages.js')
 /**
  * Database setup
  */
-const db = 'mongodb://localhost:27017/mixer'|| process.env.MONGO_URL;
+const db = process.env.MONGO_URL;
 
 // Connect to Database
 mongoose.connect(db, { 
