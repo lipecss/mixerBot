@@ -43,7 +43,9 @@ mongoose.connect(db, {
     useUnifiedTopology: true,
     reconnectTries: 30,
     reconnectInterval: 500, // in ms
-    useCreateIndex: true, 
+    useCreateIndex: true,
+    socketTimeoutMS: 0,
+    keepAlive: true,
 }).then(()=>{
     console.log('Conectado com sucesso ao banco!')
 }).catch((err)=>{
