@@ -35,7 +35,7 @@ exports.run = async (client, data, args, userId, channelId, socket, msg) => {
         if (number % 2 == 0) {
             // Gera a probabildiade de chances de conseguir roubar
             canIGetCoins(1,10)
-
+            socket.call('msg', [`Ah que pena @${data.user_name}, voce nao conseguiu roubar ninguem!`])
             // Se a probabilidade for de 80% nao irá retirar (Falsa)
             if(rangeNumber >= 1 && rangeNumber <= 8){
                 console.log('80%', rangeNumber)
@@ -103,7 +103,8 @@ exports.run = async (client, data, args, userId, channelId, socket, msg) => {
             }
             console.log(`${number} é Par`)
         }else{
-            console.log(`${number} é Impar`)
+          socket.call('msg', [`@${data.user_name}, sua tentantiva de roubar nao deu certo!`])
+          console.log(`${number} é Impar`)
         }
     }
     

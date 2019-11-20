@@ -52,7 +52,7 @@ let userInfo; //Dados do canal
 const myiduser = 4509390; // Id do usuario do canal
 const channelId = 3553359; // Id do canal
 let isOnline = false;
-let roundSkillAndEventsCoins = 200 // Valor que os sparks serão validados e divididos
+let roundSkillAndEventsCoins = 5000 // Valor que os sparks serão validados e divididos
 
 const ca = new Carina({ isBot: true }).open();
 
@@ -111,7 +111,7 @@ socket.on('UserUpdate', data =>{
 // Evento de escutar as mensagens recebidas no chat
 socket.on('ChatMessage', async data => {
     //console.log(data.message)
-    // Pegando o conteudo da mensagem
+    
         // Se a Mensagem conter Autocolantes(Stikers)
         if (data.message.meta.is_skill) {
             let stickers = data.message.meta
@@ -152,6 +152,7 @@ socket.on('ChatMessage', async data => {
             }
             // console.log(JSON.stringify(data.message.meta, null, 4));
         }
+    // Pegando o conteudo da mensagem
     let msg = data.message.message[0].data.toLowerCase();
 
         // Se a mensagem nao conter o prefixo do codigo, retorna nada
@@ -210,7 +211,7 @@ socket.on('UserJoin', async data => {
             const newCoin = new Money({
                 mixeruserId: data.id,
                 username: data.username,
-                coin: 0
+                coin: 500
             })
             console.log(`Usuario: ${data.username} foi adicionado ao banco de Money`)
             newCoin.save().catch(err => console.log(err))
