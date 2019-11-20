@@ -40,7 +40,10 @@ const db = process.env.MONGO_URL;
 // Connect to Database
 mongoose.connect(db, { 
     useNewUrlParser: true,
-    useUnifiedTopology: true
+    useUnifiedTopology: true,
+    reconnectTries: 30,
+    reconnectInterval: 500, // in ms
+    useCreateIndex: true, 
 }).then(()=>{
     console.log('Conectado com sucesso ao banco!')
 }).catch((err)=>{
