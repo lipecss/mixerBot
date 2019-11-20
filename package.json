@@ -12,10 +12,12 @@
   "dependencies": {
     "@mixer/client-node": "^3.5.0",
     "@mixer/shortcode-oauth": "^1.1.0",
+    "axios": "^0.19.0",
     "carina": "^0.11.2",
     "cheerio": "^1.0.0-rc.3",
     "colors": "^1.4.0",
     "dotenv": "^8.1.0",
+    "mathjs": "^6.2.3",
     "mixer-shortcode-oauth": "^1.0.9",
     "moment": "^2.24.0",
     "moment-timezone": "^0.5.26",
@@ -25,6 +27,7 @@
     "node-fetch": "^2.6.0",
     "node-http-ping": "^0.3.1",
     "say": "^0.16.0",
+    "weather-js2": "^2.0.2",
     "ws": "^7.1.2"
   }
 }

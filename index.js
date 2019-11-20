@@ -190,8 +190,8 @@ socket.on('ChatMessage', async data => {
         } catch(err){
              //Apaga a o comando que não existe
              socket.call('deleteMessage', [data.id]).then(() =>{
-                console.log('mensagem apagada')
-            }).catch(console.log)
+                 console.log('mensagem apagada')
+             }).catch(console.log)
             if (err.code == "MODULE_NOT_FOUND") console.log("Esse comando não existe! Tente Novamente");
             socket.call('whisper', [data.user_name, 'desculpe mas esse comando nao existe']);
             console.log(err);

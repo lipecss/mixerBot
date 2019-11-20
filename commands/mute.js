@@ -12,6 +12,8 @@ exports.run = async (client, data, args, userId, channelId, socket, msg) => {
 
     let toMute = args[0];
     let mutetime  = args[1];
+    if(!toMute) return socket.call('whisper', [data.user_name, `informe quem será mutado!`]);
+    if(!mutetime) return socket.call('whisper', [data.user_name, `é necessário informar a duração Ex: 2d/2h/2m ou 2s!`]);
     //console.log(data.message.message[2]);
     if(roles.some(r => data.user_roles.includes(r))){
      socket.call('timeout', [toMute, `"${mutetime}"`]).then(()=>{
