@@ -68,7 +68,7 @@ exports.run = async (client, data, args, userId, channelId, socket, msg) => {
                 // Se o valor digitado é menor ou igual ao saldo de quem será roubado
                 if(whoToGet.coin >= valueToGet){
                   // Envia no chat a confirmação que o usuario perdeu X moedas por nao ter conseguido
-                  socket.call('msg', [`:swag @${data.username} roubou ${valueToGet} moedas`])
+                  socket.call('msg', [`:swag @${data.user_name} roubou ${valueToGet} moedas`])
                   
                   // Retira do usuario informado o valor de moedas
                   whoToGet.coin -= valueToGet
@@ -116,7 +116,7 @@ exports.run = async (client, data, args, userId, channelId, socket, msg) => {
     setTimeout(() => {
       // Remove o usuario do array e permite ele usar novamente.
       talkedRecently.delete(data.user_id);
-    }, 1000);
+    }, 900000);
   }
 }
 
