@@ -3,7 +3,7 @@ const mongoose     = require('mongoose');
 
 const Money = require('../models/Coin.js')
 
-exports.run = async (client, data, args, userId, channelId, socket, msg) => {
+exports.run = async (data, args, userId, channelId, socket, msg) => {
     Money.findOne({mixeruserId: data.user_id}, async (err, user) =>{
         if(err) console.log(err);
         if(user){

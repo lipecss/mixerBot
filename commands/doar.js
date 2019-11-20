@@ -5,7 +5,7 @@ const moment = require('moment')
 const Money = require('../models/Coin.js')
 const Log = require('../models/Log.js')
 
-exports.run = async (client, data, args, userId, channelId, socket, msg) => {
+exports.run = async (data, args, userId, channelId, socket, msg) => {
     let roles = [
         'Owner', 
         'Mod'
@@ -51,7 +51,7 @@ exports.run = async (client, data, args, userId, channelId, socket, msg) => {
             username: data.user_name,
             action: 'Comando Negado',
             category: 'Comando',
-            message: `Usuário ${data.user_name} sem permissao tentou usar o comando !givecoinsto em ${moment().format('LLL')}`
+            message: `Usuário ${data.user_name} sem permissao tentou usar o comando !doar em ${moment().format('LLL')}`
         })
     
     // Salva o LOG no banco de Dados

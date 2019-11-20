@@ -1,5 +1,5 @@
 const math = require('mathjs');
-exports.run = async (client, data, args, userId, channelId, socket, msg) => {
+exports.run = async (data, args, userId, channelId, socket, msg) => {
     let input = args.join(" ");
     if(!input) return socket.call('whisper', [data.user_name, `Você deve fornecer uma equação a ser resolvida na calculadora!`]);
 

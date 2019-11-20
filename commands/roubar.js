@@ -7,7 +7,7 @@ const Log = require('../models/Log.js')
 
 const talkedRecently = new Set();
 
-exports.run = async (client, data, args, userId, channelId, socket, msg) => {
+exports.run = async (data, args, userId, channelId, socket, msg) => {
   let valueToGet = parseInt(args[0])
   let number = Math.floor((Math.random() * 100) + 1);
   var rangeNumber = canIGetCoins()

@@ -1,7 +1,7 @@
 const Mixer = require('@mixer/client-node');
 const fetch = require('node-fetch');
 
-exports.run = async (client, data, args, userId, channelId, socket, msg) => {
+exports.run = async (data, args, userId, channelId, socket, msg) => {
     const mixer = new Mixer.Client(new Mixer.DefaultRequestRunner());
     let channel = args[0];
     //console.log(data);

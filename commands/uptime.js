@@ -4,7 +4,7 @@ const moment = require("moment")
 moment.locale('pt-BR');
 
 const channelID = 3553359
-exports.run = async (client, data, args, userId, channelId, socket, msg) => {
+exports.run = async (data, args, userId, channelId, socket, msg) => {
 
     const mixerFetch = await fetch(`https://mixer.com/api/v1/channels/${channelID}/broadcast`)
     .then((res)=>{

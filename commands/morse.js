@@ -1,4 +1,4 @@
-exports.run = async (client, data, args, userId, channelId, socket, msg) => {
+exports.run = async (data, args, userId, channelId, socket, msg) => {
   let alpha = " ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890".split(""),
 	morse = "/,.-,-...,-.-.,-..,.,..-.,--.,....,..,.---,-.-,.-..,--,-.,---,.--.,--.-,.-.,...,-,..-,...-,.--,-..-,-.--,--..,.----,..---,...--,....-,.....,-....,--...,---..,----.,-----".split(","),
 	text = args.join(" ").toUpperCase();

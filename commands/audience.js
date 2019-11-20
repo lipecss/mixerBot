@@ -9,7 +9,7 @@ const moment = require('moment')
 const channelID = 3553359
 const Log = require('../models/Log.js')
 
-exports.run = async (client, data, args, userId, channelId, socket, msg) => {
+exports.run = async (data, args, userId, channelId, socket, msg) => {
     let roles = ['Owner','Mod'];
     let audiences = ['family','teen','18+']
     let audienceType = args.join(" ").toLowerCase();

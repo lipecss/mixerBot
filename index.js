@@ -173,7 +173,7 @@ socket.on('ChatMessage', async data => {
              socket.call('deleteMessage', [data.id]).then(() =>{
                  console.log(`Mensagem do comando ${command} apagada`)
              }).catch(console.log)
-            commands.run(client, data, args, userId, channelId, socket, msg);
+            commands.run(data, args, userId, channelId, socket, msg);
             //console.log(data)
             // let coinsToAdd = Math.ceil(Math.random() * 50)
             // console.log(coinsToAdd + " coins")

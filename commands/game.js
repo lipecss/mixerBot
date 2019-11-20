@@ -10,7 +10,7 @@ const moment = require('moment')
 const Log = require('../models/Log.js')
 const channelID = 3553359
 
-exports.run = async (client, data, args, userId, channelId, socket, msg) => {
+exports.run = async (data, args, userId, channelId, socket, msg) => {
     let roles = ['Owner','Mod'];
     let gameId = args.join(" ");
 
