@@ -1,4 +1,8 @@
 const Mixer = require('@mixer/client-node');
+const mongoose = require('mongoose');
+const moment = require('moment')
+
+const Log = require('../models/Log.js')
 
 exports.run = async (client, data, args, userId, channelId, socket, msg) => {
   let usertoclear = args.join(" ")

@@ -3,6 +3,10 @@ require('dotenv').config()
 
 const Mixer = require('@mixer/client-node');
 const request = require('request');
+const mongoose = require('mongoose');
+const moment = require('moment')
+
+const Log = require('../models/Log.js')
 const channelID = 3553359
 
 exports.run = async (client, data, args, userId, channelId, socket, msg) => {

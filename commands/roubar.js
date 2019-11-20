@@ -12,6 +12,7 @@ exports.run = async (client, data, args, userId, channelId, socket, msg) => {
   let number = Math.floor((Math.random() * 100) + 1);
   var rangeNumber = canIGetCoins()
 
+  if(!valueToGet) return socket.call('whisper', [data.user_name, `Informe o valor a ser reoubado!`]);
   // Se usuario estiver no array de CoolDown,ele nao poderá usar o comando
   if (talkedRecently.has(data.user_id)) {
     console.log(talkedRecently)
