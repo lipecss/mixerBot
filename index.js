@@ -49,7 +49,7 @@ mongoose.connect(db, {
     // If not connected, return errors immediately rather than waiting for reconnect
     bufferMaxEntries: 0,
     connectTimeoutMS: 10000, // Give up initial connection after 10 seconds
-    socketTimeoutMS: 60000, // Close sockets after 45 seconds of inactivity
+    socketTimeoutMS: 60000, // Close sockets after 60 seconds of inactivity
     useUnifiedTopology: true,
     keepAlive: true,
 }).then(()=>{
