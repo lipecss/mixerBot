@@ -19,6 +19,17 @@ const client = new Mixer.Client(new Mixer.DefaultRequestRunner());
 // Prefixo do Bot
 client.prefix = process.env.PREFIX;
 
+//Executa a função de envio da SMS quando o servidor fica ativo
+SMSOpenServer()
+
+//   twilio.calls.create({
+//     url: 'http://demo.twilio.com/docs/voice.xml',
+//     to: '+5511951350668',
+//     from: '+19198085223'
+// }).then(call => 
+//     console.log(call)
+// ).catch((err) => console.log(err));
+
 // Localização do Moment
 moment.locale('pt-BR');
 /**
@@ -56,6 +67,8 @@ mongoose.connect(db, {
     console.log('Conectado com sucesso ao banco!')
 }).catch((err)=>{
     console.log('Erro ao tentar se conectar ao Mongodb ' + err);
+    // Envia a SMS informando erro no MONGO
+    SMSDownMongo(err)
 })
 
 // Variáveis Globais
@@ -113,6 +126,7 @@ function createChatSocket (userId, channelId, endpoints, authkey) {
     .catch(error => {
         console.error('Oh não! Ocorreu um erro.');
         console.error(error);
+        SMSDownServer(error)
     });
 
 socket.on('UserUpdate', data =>{
@@ -433,4 +447,39 @@ ca.subscribe(`channel:${channelId}:update`, update =>{
     console.log('isOnline é: ' + isOnline);
 })
 
+}
+
+
+
+function SMSOpenServer(){
+    const twilio = require('twilio')(process.env.TWILIO_VOICE_ACCOUNT_SID, process.env.TWILIO_VOICE_TOKEN);
+    twilio.messages
+    .create({
+       body: `[${moment().format('LLL')}] O BOT está ativo agora`,
+       from: '+19198085223',
+       to: process.env.PHONE_NUMBER
+     })
+    .then(message => console.log(message.sid));
+}
+
+function SMSDownServer(erro){
+    const twilio = require('twilio')(process.env.TWILIO_VOICE_ACCOUNT_SID, process.env.TWILIO_VOICE_TOKEN);
+    twilio.messages
+    .create({
+       body: `[${moment().format('LLL')}] O BOT parou de funcionar: ${erro} `,
+       from: '+19198085223',
+       to: process.env.PHONE_NUMBER
+     })
+    .then(message => console.log(message.sid));
+}
+
+function SMSDownMongo(erro){
+    const twilio = require('twilio')(process.env.TWILIO_VOICE_ACCOUNT_SID, process.env.TWILIO_VOICE_TOKEN);
+    twilio.messages
+    .create({
+       body: `[${moment().format('LLL')}] Ocorreu um erro no Bando do BOT: ${erro} `,
+       from: '+19198085223',
+       to: process.env.PHONE_NUMBER
+     })
+    .then(message => console.log(message.sid));
 }
