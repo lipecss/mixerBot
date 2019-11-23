@@ -20,7 +20,7 @@ const client = new Mixer.Client(new Mixer.DefaultRequestRunner());
 client.prefix = process.env.PREFIX;
 
 //Executa a função de envio da SMS quando o servidor fica ativo
-SMSOpenServer()
+// SMSOpenServer()
 
 //   twilio.calls.create({
 //     url: 'http://demo.twilio.com/docs/voice.xml',
@@ -68,7 +68,7 @@ mongoose.connect(db, {
 }).catch((err)=>{
     console.log('Erro ao tentar se conectar ao Mongodb ' + err);
     // Envia a SMS informando erro no MONGO
-    SMSDownMongo(err)
+    // SMSDownMongo(err)
 })
 
 // Variáveis Globais
@@ -126,7 +126,7 @@ function createChatSocket (userId, channelId, endpoints, authkey) {
     .catch(error => {
         console.error('Oh não! Ocorreu um erro.');
         console.error(error);
-        SMSDownServer(error)
+        // SMSDownServer(error)
     });
 
 socket.on('UserUpdate', data =>{
@@ -242,94 +242,123 @@ socket.on('UserJoin', async data => {
             newCoin.save().catch(err => console.log(err))
         }
     })
-
+    const followers = await fetch(`https://mixer.com/api/v1/channels/${channelId}/follow`)
+    .then((res)=>{
+      return res.json();
+    })
+    .then((users)=>{
+        const followers = users.map(({username})=>username)
+        
+        User.findOne({mixeruserId: data.id}).then(async (user) =>{
+            if(user && user.isUnfollowed){
+                console.log(`${data.username} retornou a Live e deixou de nos seguir antes`)
+            }
+            if(!user){
+                // Pega os dados do novo usuario
+                const mixerFetch = await fetch(`https://mixer.com/api/v1/users/${data.id}`)
+                .then((res)=>{
+                    return res.json();
+            })
+            .then(async (datafetch)=>{
+                const mixerLevelProgression = await fetch(`https://mixer.com/api/v1/ascension/channels/${channelId}/users/${datafetch.id}`)
+                .then((res)=>{
+                    return res.json();
+                })
+                .then(async (datafetchLevel)=>{
+                    console.log(datafetchLevel)
+                    if(followers.includes(datafetchLevel.username)){
+                        const newuser = new User({
+                            mixeruserId: datafetch.id,
+                            mixerchannelId: datafetch.channel.id,
+                            username: datafetch.username,
+                            level: datafetch.level,
+                            levelProgression: datafetchLevel.level.level,
+                            avatarUrl: datafetch.avatarUrl,
+                            assetsUrl: datafetchLevel.level.assetsUrl,
+                            isverified: datafetch.verified,
+                            isfollow: true,
+                            ispartnered: datafetch.channel.partnered,
+                            languageId: datafetch.channel.languageId,
+                            createdTimestamp : Date.now()
+                        })
+                        // Cadatra no banco
+                        newuser.save().then(() =>{
+                            console.log(`Usuario ${datafetch.username} cadastrado com sucesso no Banco`);
+                        }).catch((err)=>{
+                            console.log('Houve um erro ao cadastrar usuáriro no Banco de Dados: ' + err)
+                        })    
+                    }else{
+                        const newuser = new User({
+                            mixeruserId: datafetch.id,
+                            mixerchannelId: datafetch.channel.id,
+                            username: datafetch.username,
+                            level: datafetch.level,
+                            levelProgression: datafetchLevel.level.level,
+                            avatarUrl: datafetch.avatarUrl,
+                            assetsUrl: datafetchLevel.level.assetsUrl,
+                            isverified: datafetch.verified,
+                            isfollow: false,
+                            ispartnered: datafetch.channel.partnered,
+                            languageId: datafetch.channel.languageId,
+                            createdTimestamp : Date.now()
+                        })
+                        // Cadatra no banco
+                        newuser.save().then(() =>{
+                            console.log(`Usuario ${datafetch.username} cadastrado com sucesso no Banco`);
+                        }).catch((err)=>{
+                            console.log('Houve um erro ao cadastrar usuáriro no Banco de Dados: ' + err)
+                        }) 
+                    }
+                    // Randomiza as mensagens do array
+                    let randomItem = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
+                    // Troca o valor userName para o nome do usuario
+                    let resultadoMessage = randomItem.replace('userName', `@${data.username}`);
+                        socket.call('msg', [resultadoMessage]);
+                    })
+                });
+            }else{
+                User.findOne({mixeruserId: data.id}).then(async (user) =>{
+                    const mixerFetch = await fetch(`https://mixer.com/api/v1/users/${user.mixeruserId}`)
+                    .then((res)=>{
+                        return res.json();
+                    })
+                    .then((datafetch)=>{
+                        // Se o usuário upar de nivel, atualiza no banco
+                        if(datafetch.level != user.level){
+                            user.level = datafetch.level;
+                            user.save().then(() =>{
+                                console.log(`Nivel de usuario atualizado, agora seu Nivel é: ${user.level}`);
+                            }).catch((err)=>{
+                                console.log(`Houve um erro ao atualizar o nível de usuario do ${user.username} no Banco de Dados:\n\n ${err}`)
+                            })
+                        // Se o suaurio alterou sua imagem de perfil
+                        }else if(datafetch.avatarUrl != user.avatarUrl){
+                            user.avatarUrl = datafetch.avatarUrl;
+                            user.save().then(() =>{
+                                console.log(`Imagem de usuario atualizado, agora é: ${user.avatarUrl}`);
+                            }).catch((err)=>{
+                                    console.log(`Houve um erro ao atualizar a imagem de usuario do ${user.username} no Banco de Dados:\n\n ${err}`)
+                            })
+                        }else if(datafetch.username != user.username){
+                            user.username = datafetch.username;
+                            user.save().then(() =>{
+                                console.log(`Isername de usuario atualizado, agora é: ${user.username}`);
+                            }).catch((err)=>{
+                                console.log(`Houve um erro ao atualizar o Username do ${user.username} no Banco de Dados:\n\n ${err}`)
+                            })
+                        }
+                    })
+                }).catch((erro)=>{
+                    console.log('Erro no banco: ' + erro)
+                })
+            }
+        });
+    })
      console.log('------------Array----------------')
      for(var i = users.length - 1; i >= 0; i--) {
          //console.log(users[i].username)
          console.log(users[i])
      }
-    
-    User.findOne({mixeruserId: data.id}).then(async (user) =>{
-        if(user && user.isUnfollowed){
-            console.log(`${data.username} retornou a Live e deixou de nos seguir antes`)
-        }
-        if(!user){
-            // Pega os dados do novo usuario
-        const mixerFetch = await fetch(`https://mixer.com/api/v1/users/${data.id}`)
-        .then((res)=>{
-            return res.json();
-        })
-        .then(async (datafetch)=>{
-            const mixerLevelProgression = await fetch(`https://mixer.com/api/v1/ascension/channels/${channelId}/users/${datafetch.id}`)
-            .then((res)=>{
-                return res.json();
-            })
-            .then(async (datafetchLevel)=>{
-                console.log(datafetchLevel)
-                const newuser = new User({
-                    mixeruserId: datafetch.id,
-                    mixerchannelId: datafetch.channel.id,
-                    username: datafetch.username,
-                    level: datafetch.level,
-                    levelProgression: datafetchLevel.level.level,
-                    avatarUrl: datafetch.avatarUrl,
-                    assetsUrl: datafetchLevel.level.assetsUrl,
-                    isverified: datafetch.verified,
-                    isfollow: false,
-                    ispartnered: datafetch.channel.partnered,
-                    languageId: datafetch.channel.languageId,
-                    createdTimestamp : Date.now()
-                })
-                // Cadatra no banco
-                newuser.save().then(() =>{
-                    console.log(`Usuario ${datafetch.username} cadastrado com sucesso no Banco`);
-                }).catch((err)=>{
-                    console.log('Houve um erro ao cadastrar usuáriro no Banco de Dados: ' + err)
-                })
-                // Randomiza as mensagens do array
-                let randomItem = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
-                // Troca o valor userName para o nome do usuario
-                let resultadoMessage = randomItem.replace('userName', `@${data.username}`);
-                socket.call('msg', [resultadoMessage]);
-            })
-         });
-        }else{
-            User.findOne({mixeruserId: data.id}).then(async (user) =>{
-                const mixerFetch = await fetch(`https://mixer.com/api/v1/users/${user.mixeruserId}`)
-                .then((res)=>{
-                  return res.json();
-                })
-                .then((datafetch)=>{
-                    // Se o usuário upar de nivel, atualiza no banco
-                    if(datafetch.level != user.level){
-                        user.level = datafetch.level;
-                        user.save().then(() =>{
-                            console.log(`Nivel de usuario atualizado, agora seu Nivel é: ${user.level}`);
-                        }).catch((err)=>{
-                            console.log(`Houve um erro ao atualizar o nível de usuario do ${user.username} no Banco de Dados:\n\n ${err}`)
-                        })
-                    // Se o suaurio alterou sua imagem de perfil
-                    }else if(datafetch.avatarUrl != user.avatarUrl){
-                        user.avatarUrl = datafetch.avatarUrl;
-                        user.save().then(() =>{
-                            console.log(`Imagem de usuario atualizado, agora é: ${user.avatarUrl}`);
-                        }).catch((err)=>{
-                            console.log(`Houve um erro ao atualizar a imagem de usuario do ${user.username} no Banco de Dados:\n\n ${err}`)
-                        })
-                    }else if(datafetch.username != user.username){
-                        user.username = datafetch.username;
-                        user.save().then(() =>{
-                            console.log(`Isername de usuario atualizado, agora é: ${user.username}`);
-                        }).catch((err)=>{
-                            console.log(`Houve um erro ao atualizar o Username do ${user.username} no Banco de Dados:\n\n ${err}`)
-                        })
-                    }
-                })
-            }).catch((erro)=>{
-                console.log('Erro no banco: ' + erro)
-            })
-        }
-    });
 });
 
 // // Tarefa que adiciona X coins aos usuarios logados
@@ -365,6 +394,7 @@ ca.subscribe(`channel:${channelId}:followed`, data =>{
         if(user && data.following == false){
             user.isfollow = false;
             user.save().then(() =>{
+                socket.call('msg', [`Poxa vida @${user.username} deixou de nos seguir... Falei que estava de Olho 3:) Volte Sempre!!`])
                 console.log(`Usuário atualizado, agora seu Status de Seguindo é: ${user.isfollow}`);
             }).catch((err)=>{
                 console.log(`Houve um erro ao atualizar o status ${user.isfollow} do usuário ${user.username} no Banco de Dados:\n\n ${err}`)
@@ -372,6 +402,7 @@ ca.subscribe(`channel:${channelId}:followed`, data =>{
         }else{
             user.isfollow = true;
             user.save().then(() =>{
+                socket.call('msg', [` <3 Iuhu @${user.username} agora é seguidor do Canal. Tô de olho se você continuará hehe <3`])
                 console.log(`Usuário atualizado, agora seu Status de Seguindo é: ${user.isfollow}`);
             }).catch((err)=>{
                 console.log(`Houve um erro ao atualizar o status ${user.isfollow} do usuário ${user.username} no Banco de Dados:\n\n ${err}`)
@@ -450,6 +481,10 @@ ca.subscribe(`channel:${channelId}:update`, update =>{
 }
 
 
+
+
+
+// FUNCOES //
 
 function SMSOpenServer(){
     const twilio = require('twilio')(process.env.TWILIO_VOICE_ACCOUNT_SID, process.env.TWILIO_VOICE_TOKEN);
