@@ -20,7 +20,7 @@ const client = new Mixer.Client(new Mixer.DefaultRequestRunner());
 client.prefix = process.env.PREFIX;
 
 //Executa a função de envio da SMS quando o servidor fica ativo
-SMSOpenServer()
+//SMSOpenServer()
 
 //   twilio.calls.create({
 //     url: 'http://demo.twilio.com/docs/voice.xml',
@@ -68,7 +68,7 @@ mongoose.connect(db, {
 }).catch((err)=>{
     console.log('Erro ao tentar se conectar ao Mongodb ' + err);
     // Envia a SMS informando erro no MONGO
-    SMSDownMongo(err)
+    //SMSDownMongo(err)
 })
 
 // Variáveis Globais
@@ -126,7 +126,7 @@ function createChatSocket (userId, channelId, endpoints, authkey) {
     .catch(error => {
         console.error('Oh não! Ocorreu um erro.');
         console.error(error);
-        SMSDownServer(error)
+        //SMSDownServer(error)
     });
 
 socket.on('UserUpdate', data =>{
