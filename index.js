@@ -250,9 +250,6 @@ socket.on('UserJoin', async data => {
         const followers = users.map(({username})=>username)
         
         User.findOne({mixeruserId: data.id}).then(async (user) =>{
-            if(user && user.isUnfollowed){
-                console.log(`${data.username} retornou a Live e deixou de nos seguir antes`)
-            }
             if(!user){
                 // Pega os dados do novo usuario
                 const mixerFetch = await fetch(`https://mixer.com/api/v1/users/${data.id}`)
@@ -342,10 +339,25 @@ socket.on('UserJoin', async data => {
                         }else if(datafetch.username != user.username){
                             user.username = datafetch.username;
                             user.save().then(() =>{
-                                console.log(`Isername de usuario atualizado, agora é: ${user.username}`);
+                                console.log(`username de usuario atualizado, agora é: ${user.username}`);
                             }).catch((err)=>{
                                 console.log(`Houve um erro ao atualizar o Username do ${user.username} no Banco de Dados:\n\n ${err}`)
                             })
+                        }else if(datafetch.partnered){
+                            if(datafetch.partnered != user.ispartnered)
+                            user.ispartnered = true;
+                            user.save().then(() =>{
+                                console.log(`Status de Parceiro atualizado para : True`);
+                            }).catch((err)=>{
+                                console.log(`Houve um erro ao atualizar o Status de Parceiro do ${user.username} no Banco de Dados:\n\n ${err}`)
+                            })
+                        }else{
+                            user.ispartnered = false;
+                            user.save().then(() =>{
+                                console.log(`Status de Parceiro atualizado para : False`);
+                            }).catch((err)=>{
+                                console.log(`Houve um erro ao atualizar o Status de Parceiro do ${user.username} no Banco de Dados:\n\n ${err}`)
+                            })  
                         }
                     })
                 }).catch((erro)=>{
@@ -391,22 +403,44 @@ socket.on('error', error => {
 ca.subscribe(`channel:${channelId}:followed`, data =>{
     console.log("Usuário: " + data.user.id + " - " + "Status: " + data.following)
     User.findOne({mixeruserId: data.user.id}).then(async (user) =>{
-        if(user && data.following == false){
-            user.isfollow = false;
-            user.save().then(() =>{
-                socket.call('msg', [`Poxa vida @${user.username} deixou de nos seguir... Falei que estava de Olho 3:) Volte Sempre!!`])
-                console.log(`Usuário atualizado, agora seu Status de Seguindo é: ${user.isfollow}`);
-            }).catch((err)=>{
-                console.log(`Houve um erro ao atualizar o status ${user.isfollow} do usuário ${user.username} no Banco de Dados:\n\n ${err}`)
-            })
+        console.log(user)
+        if(user){
+            if(user.isfollow){
+                user.isfollow = false;
+                user.save().then(() =>{
+                    socket.call('msg', [`Poxa vida @${user.username} deixou de nos seguir... Falei que estava de Olho 3:) Volte Sempre!!`])
+                    console.log(`Usuário atualizado, agora seu Status de Seguindo é: ${user.isfollow}`);
+                }).catch((err)=>{
+                    console.log(`Houve um erro ao atualizar o status ${user.isfollow} do usuário ${user.username} no Banco de Dados:\n\n ${err}`)
+                })
+            }else{
+                user.isfollow = true;
+                user.save().then(() =>{
+                    socket.call('msg', [` <3 Iuhu @${user.username} agora é seguidor do Canal. Tô de olho se você continuará hehe <3`])
+                    console.log(`Usuário atualizado, agora seu Status de Seguindo é: ${user.isfollow}`);
+                }).catch((err)=>{
+                    console.log(`Houve um erro ao atualizar o status ${user.isfollow} do usuário ${user.username} no Banco de Dados:\n\n ${err}`)
+                })
+            }
         }else{
-            user.isfollow = true;
-            user.save().then(() =>{
-                socket.call('msg', [` <3 Iuhu @${user.username} agora é seguidor do Canal. Tô de olho se você continuará hehe <3`])
-                console.log(`Usuário atualizado, agora seu Status de Seguindo é: ${user.isfollow}`);
-            }).catch((err)=>{
-                console.log(`Houve um erro ao atualizar o status ${user.isfollow} do usuário ${user.username} no Banco de Dados:\n\n ${err}`)
+            console.log('nao tem ainda')
+            const newuser = new User({
+                mixeruserId: data.user.channel.userId,
+                mixerchannelId: data.user.channel.id,
+                username: data.user.channel.token,
+                level: data.user.level,
+                levelProgression: 0,
+                avatarUrl: data.user.avatarUrl,
+                assetsUrl: 0,
+                isverified: data.user.verified,
+                isfollow: true,
+                ispartnered: false,
+                languageId: data.user.channel.languageId,
+                createdTimestamp : Date.now()
             })
+            // Cadatra no banco
+            newuser.save()
+            .then(console.log('cadastrado com sucesso'))
         }
     })
 })
