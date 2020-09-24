@@ -24,8 +24,8 @@ SMSOpenServer()
 
 //   twilio.calls.create({
 //     url: 'http://demo.twilio.com/docs/voice.xml',
-//     to: '+5511951350668',
-//     from: '+19198085223'
+//     to: '+55number',
+//     from: '+number'
 // }).then(call => 
 //     console.log(call)
 // ).catch((err) => console.log(err));
@@ -525,7 +525,7 @@ function SMSOpenServer(){
     twilio.messages
     .create({
        body: `[${moment().format('LLL')}] O BOT está ativo agora`,
-       from: '+19198085223',
+       from: '+number',
        to: process.env.PHONE_NUMBER
      })
     .then(message => console.log(message.sid));
@@ -536,7 +536,7 @@ function SMSDownServer(erro){
     twilio.messages
     .create({
        body: `[${moment().format('LLL')}] O BOT parou de funcionar: ${erro} `,
-       from: '+19198085223',
+       from: '+number',
        to: process.env.PHONE_NUMBER
      })
     .then(message => console.log(message.sid));
@@ -547,7 +547,7 @@ function SMSDownMongo(erro){
     twilio.messages
     .create({
        body: `[${moment().format('LLL')}] Ocorreu um erro no Bando do BOT: ${erro} `,
-       from: '+19198085223',
+       from: '+number',
        to: process.env.PHONE_NUMBER
      })
     .then(message => console.log(message.sid));
