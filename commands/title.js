@@ -22,7 +22,7 @@ exports.run = async (data, args, userId, channelId, socket, msg) => {
         headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.ACCESS_TOKEN}`
+            'Authorization': ``
         },
         json: true,
         body:{
