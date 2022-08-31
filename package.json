@@ -20,7 +20,7 @@
     "mathjs": "^6.2.5",
     "mixer-shortcode-oauth": "^1.0.9",
     "moment": "^2.24.0",
-    "moment-timezone": "^0.5.27",
+    "moment-timezone": "^0.5.35",
     "mongoose": "^5.7.12",
     "ms": "^2.1.2",
     "node-cron": "^2.0.3",
